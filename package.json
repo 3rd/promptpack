@@ -1,0 +1,86 @@
+{
+  "name": "promptpack",
+  "version": "0.0.0-semantic-release",
+  "repository": "https://github.com/3rd/promptpack",
+  "description": "CLI tool for packing files into a prompt for LLM usage.",
+  "keywords": [
+    "cli",
+    "llm",
+    "gpt"
+  ],
+  "author": {
+    "name": "Andrei Neculaesei",
+    "email": "3rd@users.noreply.github.com"
+  },
+  "license": "MIT",
+  "type": "module",
+  "files": [
+    "dist"
+  ],
+  "bin": {
+    "promptpack": "./dist/main.js"
+  },
+  "engines": {
+    "node": ">= 18.0.0"
+  },
+  "scripts": {
+    "dev": "pnpm test:watch",
+    "build:watch": "pkgroll --watch",
+    "build": "pnpm run clean && pkgroll --target=node18",
+    "test": "NODE_OPTIONS='--import=tsx --no-warnings' ava",
+    "test:watch": "NODE_OPTIONS='--import=tsx --no-warnings' ava --watch",
+    "tsc": "tsc",
+    "prepare": "husky install",
+    "prepublishOnly": "pnpm run build && pnpm run tsc && pnpm run test",
+    "clean": "rm -rf dist"
+  },
+  "ava": {
+    "extensions": {
+      "ts": "commonjs"
+    }
+  },
+  "lint-staged": {
+    "*": "prettier --ignore-unknown --write"
+  },
+  "prettier": {
+    "arrowParens": "always",
+    "bracketSameLine": false,
+    "bracketSpacing": true,
+    "printWidth": 120,
+    "quoteProps": "as-needed",
+    "semi": true,
+    "singleQuote": false,
+    "tabWidth": 2,
+    "trailingComma": "es5",
+    "useTabs": false
+  },
+  "devDependencies": {
+    "@commitlint/cli": "^18.4.3",
+    "@commitlint/config-conventional": "^18.4.3",
+    "@semantic-release/changelog": "^6.0.3",
+    "@semantic-release/git": "^10.0.1",
+    "@types/copy-paste": "^1.1.33",
+    "@types/node": "^20.10.5",
+    "@types/react": "^18.2.46",
+    "@types/sinon": "^17.0.2",
+    "ava": "^6.0.1",
+    "husky": "^8.0.3",
+    "lint-staged": "^15.2.0",
+    "pkgroll": "^2.0.1",
+    "prettier": "^3.1.1",
+    "semantic-release": "^22.0.12",
+    "sinon": "^17.0.1",
+    "tsx": "^4.7.0",
+    "typescript": "^5.3.3"
+  },
+  "dependencies": {
+    "chokidar": "^3.5.3",
+    "cleye": "^1.3.2",
+    "clipboardy": "^4.0.0",
+    "copy-paste": "^1.5.3",
+    "execa": "^8.0.1",
+    "ink": "^4.4.1",
+    "js-tiktoken": "^1.0.8",
+    "react": "^18.2.0"
+  }
+}

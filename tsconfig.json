@@ -1,0 +1,17 @@
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "lib": ["ES2022"],
+    "esModuleInterop": true,
+    "isolatedModules": true,
+    "noEmit": true,
+    "resolveJsonModule": true,
+    "skipLibCheck": true,
+    "moduleResolution": "Node16",
+    "module": "Node16",
+    "jsx": "react-jsx",
+    "strict": true,
+    "types": ["node"]
+  },
+  "include": ["./src"]
+}
