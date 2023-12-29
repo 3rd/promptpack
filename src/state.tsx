@@ -100,7 +100,7 @@ const toggleItemSelected = (node: TreeDirectory | TreeFile, path: string): TreeD
   return newNode;
 };
 
-const AppStateReducer = (state: DerivedAppState, action: AppAction): DerivedAppState => {
+const appStateReducer = (state: DerivedAppState, action: AppAction): DerivedAppState => {
   const nextState = { ...state };
   const { cursorItemPath, root, visibleItems } = state;
 
@@ -154,4 +154,4 @@ const bootstrapState = (root: TreeDirectory) => {
   };
 };
 
-export const useAppReducer = (root: TreeDirectory) => useReducer(AppStateReducer, bootstrapState(root));
+export const useAppReducer = (root: TreeDirectory) => useReducer(appStateReducer, bootstrapState(root));

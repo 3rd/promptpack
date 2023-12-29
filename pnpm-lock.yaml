@@ -26,6 +26,9 @@ dependencies:
   js-tiktoken:
     specifier: ^1.0.8
     version: 1.0.8
+  nanoid:
+    specifier: ^5.0.4
+    version: 5.0.4
   react:
     specifier: ^18.2.0
     version: 18.2.0
@@ -3658,6 +3661,13 @@ packages:
     resolution:
       { integrity: sha512-6FlzubTLZG3J2a/NVCAleEhjzq5oxgHyaCU9yYXvcLsvoVaHJq/s5xXI6/XXP6tz7R9xAOtHnSO/tXtF3WRTlA== }
     dev: true
+
+  /nanoid@5.0.4:
+    resolution:
+      { integrity: sha512-vAjmBf13gsmhXSgBrtIclinISzFFy22WwCYoyilZlsrRXNIHSwgFQ1bEdjRwMT3aoadeIF6HMuDRlOxzfXV8ig== }
+    engines: { node: ^18 || >=20 }
+    hasBin: true
+    dev: false
 
   /neo-async@2.6.2:
     resolution:

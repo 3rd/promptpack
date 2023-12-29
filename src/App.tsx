@@ -1,14 +1,15 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Box, Text, useApp, useInput } from "ink";
 import clipboard from "copy-paste";
+import { nanoid } from "nanoid";
 import { Screen } from "./components/Screen.js";
 import { Stats } from "./components/Stats.js";
-import { getTree, isTreeDirectory, watch } from "./utils/fs.js";
-import { Tree } from "./components/Tree.js";
-import { useAppReducer } from "./state.js";
-import { buildPrompt } from "./prompt.js";
 import { tokenize } from "./utils/tokenizer.js";
 import { Header } from "./components/Header.js";
+import { Tree } from "./components/Tree.js";
+import { getTree, isTreeDirectory, watch } from "./utils/fs.js";
+import { useAppReducer } from "./state.js";
+import { buildPrompt } from "./prompt.js";
 
 const cwd = process.cwd();
 const initialRoot = getTree(cwd);
@@ -18,15 +19,25 @@ const MAX_LOG_LENGTH = 6;
 export const App = () => {
   const app = useApp();
   const [state, dispatch] = useAppReducer(initialRoot);
-  const [notifications, setNotifications] = useState<string[]>([]);
+  const [notifications, setNotifications] = useState<{ id: string; message: string }[]>([]);
 
   const addNotification = (notification: string) => {
     const prefix = `${new Date().toLocaleTimeString("ja-JP")} `;
-    setNotifications((prevNotifications) => [...prevNotifications, prefix + notification]);
+    setNotifications((prevNotifications) => [
+      ...prevNotifications,
+      {
+        id: nanoid(),
+        message: prefix + notification,
+      },
+    ]);
   };
 
   useInput((input, key) => {
-    if (input === "q") app.exit();
+    if (input === "q") {
+      app.exit();
+      // eslint-disable-next-line node/no-process-exit
+      process.exit(0);
+    }
     if (input === "j" || key.downArrow) dispatch({ type: "nav:down" });
     if (input === "k" || key.upArrow) dispatch({ type: "nav:up" });
     if (key.return || key.tab) dispatch({ type: "nav:tab" });
@@ -66,7 +77,7 @@ export const App = () => {
     return () => {
       watcher.close();
     };
-  }, []);
+  }, [dispatch]);
 
   const stats = useMemo(() => {
     const prompt = buildPrompt(state.selectedFiles);
@@ -82,16 +93,16 @@ export const App = () => {
     <Screen>
       <Header>
         <Box flexDirection="column" flexGrow={0}>
-          {notifications.slice(-MAX_LOG_LENGTH).map((notification, index) => (
-            <Text color="gray" key={index}>
-              <Text>{notification}</Text>
+          {notifications.slice(-MAX_LOG_LENGTH).map((notification) => (
+            <Text key={notification.id} color="gray">
+              <Text>{notification.message}</Text>
             </Text>
           ))}
         </Box>
       </Header>
       <Stats fileCount={stats.files.length} tokenCount={stats.tokens} />
       <Box flexGrow={1}>
-        <Tree items={state.visibleItems} cursorItemPath={state.cursorItemPath} />
+        <Tree cursorItemPath={state.cursorItemPath} items={state.visibleItems} />
       </Box>
     </Screen>
   );
