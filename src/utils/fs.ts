@@ -58,33 +58,35 @@ export const getTree = (
 
   for (const item of items) {
     const itemPath = resolve(path, item);
-    const stats = statSync(itemPath);
-    const extension = item.includes(".") ? item.split(".").pop()! : "";
+    try {
+      const stats = statSync(itemPath);
+      const extension = item.includes(".") ? item.split(".").pop()! : "";
 
-    if (stats.isSymbolicLink()) continue;
+      if (stats.isSymbolicLink()) continue;
 
-    if (stats.isDirectory()) {
-      if (ignoredDirectories.includes(item)) continue;
-      result.directories.push(
-        getTree(itemPath, {
+      if (stats.isDirectory()) {
+        if (ignoredDirectories.includes(item)) continue;
+        result.directories.push(
+          getTree(itemPath, {
+            level: result.level + 1,
+            getIsSelected: opts?.getIsSelected,
+            getIsExpanded: opts?.getIsExpanded,
+            rootPath: opts?.rootPath ?? path,
+          })
+        );
+      } else {
+        result.files.push({
+          type: "file",
+          name: item,
+          path: itemPath,
+          relativePath: relative(opts?.rootPath ?? path, itemPath),
+          extension,
+          size: stats.size,
           level: result.level + 1,
-          getIsSelected: opts?.getIsSelected,
-          getIsExpanded: opts?.getIsExpanded,
-          rootPath: opts?.rootPath ?? path,
-        })
-      );
-    } else {
-      result.files.push({
-        type: "file",
-        name: item,
-        path: itemPath,
-        relativePath: relative(opts?.rootPath ?? path, itemPath),
-        extension,
-        size: stats.size,
-        level: result.level + 1,
-        selected: opts?.getIsSelected?.(itemPath) ?? false,
-      });
-    }
+          selected: opts?.getIsSelected?.(itemPath) ?? false,
+        });
+      }
+    } catch {}
   }
 
   return result;
