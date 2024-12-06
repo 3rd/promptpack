@@ -10,4 +10,5 @@ export const theme = {
   },
   cursor: "#793886",
   selected: "#00CF81",
+  partiallySelected: "#FFD700",
 };

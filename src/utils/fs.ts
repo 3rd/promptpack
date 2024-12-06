@@ -1,5 +1,5 @@
 import { readdirSync, statSync } from "node:fs";
-import { resolve, relative } from "node:path";
+import { relative, resolve } from "node:path";
 import chokidar from "chokidar";
 import { ignoredDirectories } from "../config.js";
 
@@ -23,6 +23,7 @@ export type TreeDirectory = TreeItemBase & {
   directories: TreeDirectory[];
   expanded: boolean;
   selected: boolean;
+  partialSelected?: boolean;
 };
 
 export const isTreeFile = (item: TreeDirectory | TreeFile): item is TreeFile => {

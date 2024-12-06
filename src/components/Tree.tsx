@@ -1,6 +1,6 @@
 import { memo, useEffect, useMemo, useRef, useState } from "react";
 import { TreeDirectory, TreeFile, isTreeDirectory } from "../utils/fs.js";
-import { Box, Newline, Text, DOMElement, measureElement } from "ink";
+import { Box, DOMElement, Newline, Text, measureElement } from "ink";
 import { theme } from "../config.js";
 
 export type TreeFileLineProps = {
@@ -28,12 +28,16 @@ export type TreeDirectoryLineProps = {
 export const TreeDirectoryLine = memo(({ directory, isCursor }: TreeDirectoryLineProps) => {
   const indent = " ".repeat(Math.max(0, (directory.level - 1) * 2));
 
+  let color;
+  if (directory.selected && !directory.partialSelected) {
+    color = theme.selected;
+  } else if (directory.partialSelected) {
+    color = theme.partiallySelected;
+  }
+
   return (
     <>
-      <Text
-        backgroundColor={isCursor ? theme.cursor : undefined}
-        color={directory.selected ? theme.selected : undefined}
-      >
+      <Text backgroundColor={isCursor ? theme.cursor : undefined} color={color}>
         {indent}
         {directory.expanded ? "▼ " : "▶ "}
         {directory.name}
@@ -72,11 +76,11 @@ export const Tree = ({ items, cursorItemPath }: TreeProps) => {
   return (
     <Box
       ref={wrapperRef}
+      borderColor={theme.border}
+      borderStyle="round"
+      borderTop={false}
       flexDirection="column"
       flexGrow={1}
-      borderStyle="round"
-      borderColor={theme.border}
-      borderTop={false}
     >
       <Text>
         {viewportItems.map((item) => {

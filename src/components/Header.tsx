@@ -11,13 +11,13 @@ export type HeaderProps = {
 export const Header = ({ children }: HeaderProps) => {
   return (
     <Box
-      gap={2}
+      borderColor={theme.border}
+      borderStyle="round"
       flexDirection="row"
+      gap={2}
       // borderTop={false}
       // borderLeft={false}
       // borderRight={false}
-      borderStyle="round"
-      borderColor={theme.border}
     >
       <Box flexDirection="column" flexGrow={1}>
         <Text>
@@ -35,6 +35,10 @@ export const Header = ({ children }: HeaderProps) => {
           <Newline />
           <Text>
             - <Kbd>Tab</Kbd> or <Kbd>Enter</Kbd> to expand/collapse directories
+          </Text>
+          <Newline />
+          <Text>
+            - <Text color={theme.comment}>f</Text> to open fuzzy finder
           </Text>
           <Newline />
           <Text>

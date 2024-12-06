@@ -79,6 +79,7 @@
     "clipboardy": "^4.0.0",
     "copy-paste": "^1.5.3",
     "execa": "^8.0.1",
+    "fuse.js": "^7.0.0",
     "ink": "^4.4.1",
     "js-tiktoken": "^1.0.8",
     "nanoid": "^5.0.4",

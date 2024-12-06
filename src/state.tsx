@@ -56,39 +56,103 @@ export const toggleDirectoryExpanded = (directory: TreeDirectory, path: string):
   };
 };
 
-export const toggleAllSelected = (directory: TreeDirectory, selected: boolean): TreeDirectory => {
+const updateDirectorySelectionState = (directory: TreeDirectory): TreeDirectory => {
+  let allSelected = true;
+  let anySelected = false;
+
+  const newDirs = directory.directories.map(updateDirectorySelectionState);
+  const allDirsSelected = newDirs.length > 0 && newDirs.every((d) => d.selected && !d.partialSelected);
+  const anyDirSelected = newDirs.some((d) => d.selected || d.partialSelected);
+
+  const allFilesSelected = directory.files.length > 0 && directory.files.every((f) => f.selected);
+  const anyFileSelected = directory.files.some((f) => f.selected);
+
+  if (directory.directories.length === 0 && directory.files.length === 0) {
+    allSelected = false;
+    anySelected = false;
+  } else {
+    allSelected =
+      (directory.directories.length === 0 || allDirsSelected) && (directory.files.length === 0 || allFilesSelected);
+    anySelected = anyDirSelected || anyFileSelected;
+  }
+
+  let selected = false;
+  let partialSelected = false;
+  if (allSelected) {
+    selected = true;
+    partialSelected = false;
+  } else if (anySelected) {
+    selected = false;
+    partialSelected = true;
+  } else {
+    selected = false;
+    partialSelected = false;
+  }
+
   return {
+    ...directory,
+    directories: newDirs,
+    selected,
+    partialSelected,
+    files: directory.files,
+  };
+};
+
+export const toggleAllSelected = (directory: TreeDirectory, selected: boolean): TreeDirectory => {
+  const newDir = {
     ...directory,
     selected,
     directories: directory.directories.map((subDir) => toggleAllSelected(subDir, selected)),
     files: directory.files.map((file) => ({ ...file, selected })),
   };
+  return updateDirectorySelectionState(newDir);
 };
 
 export const toggleItemSelected = (node: TreeDirectory | TreeFile, path: string): TreeDirectory | TreeFile => {
   if (isTreeDirectory(node)) {
     const newNode = { ...node };
     if (node.path === path) {
-      newNode.selected = !node.selected;
-      newNode.directories = node.directories.map((subDir) => toggleAllSelected(subDir, newNode.selected));
-      newNode.files = node.files.map((file) => ({ ...file, selected: newNode.selected }));
+      const newSelected = !node.selected;
+      newNode.directories = newNode.directories.map((subDir) => toggleAllSelected(subDir, newSelected));
+      newNode.files = newNode.files.map((file) => ({ ...file, selected: newSelected }));
+      newNode.selected = newSelected;
     } else {
-      newNode.directories = node.directories.map((subDir) => toggleItemSelected(subDir, path) as TreeDirectory);
+      newNode.directories = newNode.directories.map((subDir) => toggleItemSelected(subDir, path) as TreeDirectory);
       newNode.files = newNode.files.map((file) => (file.path === path ? { ...file, selected: !file.selected } : file));
-      const allDirectoriesSelected =
-        newNode.directories.length > 0 && newNode.directories.every((subDir) => subDir.selected);
-      const allFilesSelected = newNode.files.length > 0 && newNode.files.every((file) => file.selected);
-      newNode.selected =
-        newNode.directories.length === 0 && newNode.files.length === 0
-          ? false
-          : (newNode.directories.length > 0 ? allDirectoriesSelected : true) &&
-            (newNode.files.length > 0 ? allFilesSelected : true);
     }
-    return newNode;
+    return updateDirectorySelectionState(newNode);
   }
   const newNode = { ...node };
   if (node.path === path) newNode.selected = !node.selected;
   return newNode;
+};
+
+export const expandToFile = (directory: TreeDirectory, filePath: string): TreeDirectory => {
+  if (!filePath.startsWith(directory.path)) return directory;
+
+  let changed = false;
+  const newDirs = directory.directories.map((d) => {
+    const res = expandToFile(d, filePath);
+    if (res !== d) changed = true;
+    return res;
+  });
+
+  const containsFile =
+    directory.files.some((f) => f.path === filePath) || newDirs.some((d) => filePath.startsWith(d.path));
+
+  let expanded = directory.expanded;
+  if (containsFile && directory.path !== filePath) {
+    expanded = true;
+    changed = true;
+  }
+
+  if (!changed && expanded === directory.expanded) return directory;
+
+  return {
+    ...directory,
+    directories: newDirs,
+    expanded,
+  };
 };
 
 const appStateReducer = (state: DerivedAppState, action: AppAction): DerivedAppState => {
@@ -117,18 +181,21 @@ const appStateReducer = (state: DerivedAppState, action: AppAction): DerivedAppS
     }
     case "select": {
       nextState.root = toggleItemSelected(root, cursorItemPath) as TreeDirectory;
+      nextState.root = updateDirectorySelectionState(nextState.root);
       nextState.selectedFiles = getSelectedFiles(nextState.root);
       nextState.visibleItems = getVisibleItems(nextState.root);
       return nextState;
     }
     case "select-file": {
       nextState.root = toggleItemSelected(root, action.payload) as TreeDirectory;
+      nextState.root = updateDirectorySelectionState(nextState.root);
       nextState.selectedFiles = getSelectedFiles(nextState.root);
       nextState.visibleItems = getVisibleItems(nextState.root);
       return nextState;
     }
     case "update-root": {
-      nextState.root = action.payload;
+      const updatedRoot = updateDirectorySelectionState(action.payload);
+      nextState.root = updatedRoot;
       nextState.visibleItems = getVisibleItems(nextState.root);
       nextState.selectedFiles = getSelectedFiles(nextState.root);
       nextState.cursorItemPath =
@@ -144,11 +211,15 @@ const appStateReducer = (state: DerivedAppState, action: AppAction): DerivedAppS
 };
 
 const bootstrapState = (root: TreeDirectory) => {
+  const updatedRoot = updateDirectorySelectionState(root);
   return {
-    root,
-    cursorItemPath: root.directories.length > 0 ? root.directories[0].path : root.files[0]?.path ?? root.path,
-    visibleItems: getVisibleItems(root),
-    selectedFiles: getSelectedFiles(root),
+    root: updatedRoot,
+    cursorItemPath:
+      updatedRoot.directories.length > 0
+        ? updatedRoot.directories[0].path
+        : updatedRoot.files[0]?.path ?? updatedRoot.path,
+    visibleItems: getVisibleItems(updatedRoot),
+    selectedFiles: getSelectedFiles(updatedRoot),
   };
 };
 
