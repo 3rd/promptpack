@@ -1,7 +1,7 @@
-import { Box, Newline, Text } from "ink";
 import React from "react";
-import { theme } from "../config.js";
+import { Box, Newline, Text } from "ink";
 import packageJson from "../../package.json";
+import { theme } from "../config.js";
 import { Kbd } from "./Kbd.js";
 
 export type HeaderProps = {
@@ -38,7 +38,7 @@ export const Header = ({ children }: HeaderProps) => {
           </Text>
           <Newline />
           <Text>
-            - <Text color={theme.comment}>f</Text> to open fuzzy finder
+            - <Kbd>f</Kbd> to open fuzzy finder
           </Text>
           <Newline />
           <Text>
