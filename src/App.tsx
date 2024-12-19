@@ -1,19 +1,19 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Box, Text, useApp, useInput } from "ink";
 import clipboard from "copy-paste";
-import { nanoid } from "nanoid";
 import Fuse from "fuse.js";
+import { Box, Text, useApp, useInput } from "ink";
+import { nanoid } from "nanoid";
 import { relative } from "path";
+import { Header } from "./components/Header.js";
 import { Screen } from "./components/Screen.js";
 import { Stats } from "./components/Stats.js";
-import { tokenize } from "./utils/tokenizer.js";
-import { Header } from "./components/Header.js";
 import { Tree } from "./components/Tree.js";
-import { TreeDirectory, getTree, isTreeDirectory, watch } from "./utils/fs.js";
-import { expandToFile, useAppReducer } from "./state.js";
-import { buildPrompt } from "./prompt.js";
-import { useScreenSize } from "./hooks/useScreenSize.js";
 import { theme } from "./config.js";
+import { useScreenSize } from "./hooks/useScreenSize.js";
+import { buildPrompt } from "./prompt.js";
+import { expandToFile, useAppReducer } from "./state.js";
+import { getTree, isTreeDirectory, TreeDirectory, watch } from "./utils/fs.js";
+import { tokenize } from "./utils/tokenizer.js";
 
 const cwd = process.cwd();
 const initialRoot = getTree(cwd);
@@ -92,7 +92,11 @@ export const App = () => {
 
   const stats = useMemo(() => {
     const prompt = buildPrompt(state.selectedFiles);
-    const tokens = tokenize(prompt);
+    const sanitizedPrompt = prompt
+      .replaceAll("<|im_start|>", "")
+      .replaceAll("<|im_end|>", "")
+      .replaceAll("<|im_sep|>", "");
+    const tokens = tokenize(sanitizedPrompt);
     return {
       files: state.selectedFiles,
       tokens: tokens.length,
