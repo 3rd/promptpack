@@ -1,5 +1,5 @@
 import { useReducer } from "react";
-import { TreeDirectory, TreeFile, isTreeDirectory } from "./utils/fs.js";
+import { isTreeDirectory, TreeDirectory, TreeFile } from "./utils/fs.js";
 
 type AppState = {
   root: TreeDirectory;

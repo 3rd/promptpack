@@ -4,6 +4,10 @@ export const theme = {
   brand: "#EC4DDE",
   border: "#8E39A6",
   comment: "#767479",
+  tokenCount: {
+    label: "#a0a0a0",
+    value: "#0abaff",
+  },
   kbd: {
     bg: "#6B3F1F",
     fg: "#F9A061",

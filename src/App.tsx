@@ -1,9 +1,9 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { memo, useEffect, useMemo, useRef, useState } from "react";
 import clipboard from "copy-paste";
 import Fuse from "fuse.js";
 import { Box, Text, useApp, useInput } from "ink";
 import { nanoid } from "nanoid";
-import { relative } from "path";
+import { relative } from "node:path";
 import { Header } from "./components/Header.js";
 import { Screen } from "./components/Screen.js";
 import { Stats } from "./components/Stats.js";
@@ -12,18 +12,33 @@ import { theme } from "./config.js";
 import { useScreenSize } from "./hooks/useScreenSize.js";
 import { buildPrompt } from "./prompt.js";
 import { expandToFile, useAppReducer } from "./state.js";
-import { getTree, isTreeDirectory, TreeDirectory, watch } from "./utils/fs.js";
+import { getTree, isTreeDirectory, TreeDirectory, TreeFile, watch } from "./utils/fs.js";
 import { tokenize } from "./utils/tokenizer.js";
 
 const cwd = process.cwd();
 const initialRoot = getTree(cwd);
 
-const gatherAllFilesFromRoot = (root: ReturnType<typeof getTree>): { path: string; name: string }[] => {
-  const result: { path: string; name: string }[] = [];
+const gatherAllFilesFromRoot = (root: ReturnType<typeof getTree>) => {
+  const result: { path: string; name: string; isDirectory: boolean; tokenCount: number; relativePath: string }[] = [];
   function traverse(dir: TreeDirectory) {
+    if (dir.path !== cwd) {
+      result.push({
+        path: dir.path,
+        relativePath: relative(cwd, dir.path),
+        name: dir.name,
+        isDirectory: true,
+        tokenCount: dir.tokenCount,
+      });
+    }
     for (const d of dir.directories) traverse(d);
     for (const f of dir.files) {
-      result.push({ path: f.path, name: f.name });
+      result.push({
+        path: f.path,
+        relativePath: relative(cwd, f.path),
+        name: f.name,
+        isDirectory: false,
+        tokenCount: f.tokenCount,
+      });
     }
   }
   traverse(root);
@@ -32,6 +47,56 @@ const gatherAllFilesFromRoot = (root: ReturnType<typeof getTree>): { path: strin
 
 const MAX_LOG_LENGTH = 6;
 
+const SearchResult = memo(
+  ({
+    result,
+    isSelected,
+    root,
+  }: {
+    result: {
+      path: string;
+      name: string;
+      isDirectory: boolean;
+      tokenCount: number;
+    };
+    isSelected: boolean;
+    root: TreeDirectory;
+  }) => {
+    const findInTree = (dir: TreeDirectory, path: string): TreeDirectory | TreeFile | undefined => {
+      if (dir.path === path) return dir;
+      for (const subDir of dir.directories) {
+        const found = findInTree(subDir, path);
+        if (found) return found;
+      }
+      return dir.files.find((f) => f.path === path);
+    };
+    const item = findInTree(root, result.path);
+    const relativePath = relative(root.path, result.path);
+
+    let color;
+    if (item && isTreeDirectory(item)) {
+      if (item.selected && !item.partialSelected) {
+        color = theme.selected;
+      } else if (item.partialSelected) {
+        color = theme.partiallySelected;
+      }
+    } else if (isSelected) {
+      color = theme.selected;
+    }
+
+    return (
+      <Text color={color}>
+        {result.isDirectory ? "📁 " : "📄 "}
+        {relativePath}
+        <Text color={theme.tokenCount.label}>
+          {" "}
+          (<Text color={theme.tokenCount.value}>{result.tokenCount}</Text> tokens)
+        </Text>
+      </Text>
+    );
+  }
+);
+
 export const App = () => {
   const { width, height } = useScreenSize();
   const app = useApp();
@@ -39,12 +104,21 @@ export const App = () => {
   const [notifications, setNotifications] = useState<{ id: string; message: string }[]>([]);
   const [isSearchMode, setIsSearchMode] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
-  const [searchResults, setSearchResults] = useState<{ path: string; name: string }[]>([]);
+  const [searchResults, setSearchResults] = useState<
+    { path: string; name: string; isDirectory: boolean; tokenCount: number }[]
+  >([]);
   const [searchIndex, setSearchIndex] = useState(0);
   const prevSelectedFilesRef = useRef<string[]>(state.selectedFiles.map((f) => f.path));
 
-  const allFilesRef = useRef<{ path: string; name: string }[]>([]);
-  const fuseRef = useRef<Fuse<{ path: string; name: string }>>();
+  const allFilesRef = useRef<
+    {
+      path: string;
+      name: string;
+      isDirectory: boolean;
+      tokenCount: number;
+    }[]
+  >([]);
+  const fuseRef = useRef<Fuse<{ path: string; name: string; isDirectory: boolean; tokenCount: number }>>();
   const rootRef = useRef(state.root);
 
   const addNotification = (notification: string) => {
@@ -109,8 +183,8 @@ export const App = () => {
       const files = gatherAllFilesFromRoot(rootRef.current);
       allFilesRef.current = files;
       fuseRef.current = new Fuse(files, {
-        keys: ["path"],
-        threshold: 0,
+        keys: ["relativePath"],
+        threshold: 0.5,
         includeScore: true,
         ignoreLocation: true,
         findAllMatches: true,
@@ -164,6 +238,7 @@ export const App = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isSearchMode]);
 
+  // eslint-disable-next-line sonarjs/cognitive-complexity
   useInput((input, key) => {
     if (isSearchMode) {
       if (key.escape) {
@@ -316,13 +391,12 @@ export const App = () => {
           {searchResults.slice(0, visibleCount).map((item, i) => {
             const isSelected = state.selectedFiles.some((f) => f.path === item.path);
             const isCurrent = i === searchIndex;
-            const style: Record<string, string> = {};
-            if (isSelected) style.color = theme.selected;
-            const relPath = relative(rootRef.current.path, item.path);
             return (
-              <Text key={item.path} {...style} inverse={isCurrent}>
-                {relPath}
-              </Text>
+              <Box key={item.path}>
+                <Text backgroundColor={isCurrent ? theme.cursor : undefined}>
+                  <SearchResult isSelected={isSelected} result={item} root={state.root} />
+                </Text>
+              </Box>
             );
           })}
         </Box>

@@ -1,7 +1,7 @@
 import { memo, useEffect, useMemo, useRef, useState } from "react";
-import { TreeDirectory, TreeFile, isTreeDirectory } from "../utils/fs.js";
-import { Box, DOMElement, Newline, Text, measureElement } from "ink";
+import { Box, DOMElement, measureElement, Newline, Text } from "ink";
 import { theme } from "../config.js";
+import { isTreeDirectory, TreeDirectory, TreeFile } from "../utils/fs.js";
 
 export type TreeFileLineProps = {
   file: TreeFile;
@@ -14,7 +14,10 @@ export const TreeFileLine = memo(({ file, isCursor }: TreeFileLineProps) => {
     <>
       <Text backgroundColor={isCursor ? theme.cursor : undefined} color={file.selected ? theme.selected : undefined}>
         {indent}
-        {file.name}
+        {file.name}{" "}
+        <Text color={theme.tokenCount.label}>
+          (<Text color={theme.tokenCount.value}>{file.tokenCount}</Text> tokens)
+        </Text>
       </Text>
       <Newline />
     </>
@@ -40,7 +43,10 @@ export const TreeDirectoryLine = memo(({ directory, isCursor }: TreeDirectoryLin
       <Text backgroundColor={isCursor ? theme.cursor : undefined} color={color}>
         {indent}
         {directory.expanded ? "▼ " : "▶ "}
-        {directory.name}
+        {directory.name}{" "}
+        <Text color={theme.tokenCount.label}>
+          (<Text color={theme.tokenCount.value}>{directory.tokenCount}</Text> tokens)
+        </Text>
       </Text>
       <Newline />
     </>

@@ -1,13 +1,15 @@
-import { readdirSync, statSync } from "node:fs";
-import { relative, resolve } from "node:path";
 import chokidar from "chokidar";
+import { readdirSync, readFileSync, statSync } from "node:fs";
+import { relative, resolve } from "node:path";
 import { ignoredDirectories } from "../config.js";
+import { tokenize } from "./tokenizer.js";
 
 type TreeItemBase = {
   name: string;
   path: string;
   relativePath: string;
   level: number;
+  tokenCount: number;
 };
 
 export type TreeFile = TreeItemBase & {
@@ -53,6 +55,7 @@ export const getTree = (
     level: opts?.level ?? 0,
     expanded: opts?.getIsExpanded?.(path) ?? false,
     selected: opts?.getIsSelected?.(path) ?? false,
+    tokenCount: 0,
   };
 
   const items = readdirSync(path);
@@ -67,15 +70,19 @@ export const getTree = (
 
       if (stats.isDirectory()) {
         if (ignoredDirectories.includes(item)) continue;
-        result.directories.push(
-          getTree(itemPath, {
-            level: result.level + 1,
-            getIsSelected: opts?.getIsSelected,
-            getIsExpanded: opts?.getIsExpanded,
-            rootPath: opts?.rootPath ?? path,
-          })
-        );
+        const subDir = getTree(itemPath, {
+          level: result.level + 1,
+          getIsSelected: opts?.getIsSelected,
+          getIsExpanded: opts?.getIsExpanded,
+          rootPath: opts?.rootPath ?? path,
+        });
+        result.directories.push(subDir);
+        result.tokenCount += subDir.tokenCount;
       } else {
+        const content = readFileSync(itemPath, "utf8");
+        const fileTokenCount = tokenize(content).length;
+        result.tokenCount += fileTokenCount;
+
         result.files.push({
           type: "file",
           name: item,
@@ -85,6 +92,7 @@ export const getTree = (
           size: stats.size,
           level: result.level + 1,
           selected: opts?.getIsSelected?.(itemPath) ?? false,
+          tokenCount: fileTokenCount,
         });
       }
     } catch {}
