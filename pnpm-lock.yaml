@@ -25,9 +25,15 @@ importers:
       fuse.js:
         specifier: ^7.0.0
         version: 7.0.0
+      ignore:
+        specifier: ^7.0.0
+        version: 7.0.0
       ink:
         specifier: ^4.4.1
         version: 4.4.1(@types/react@18.2.46)(react@18.2.0)
+      istextorbinary:
+        specifier: ^9.5.0
+        version: 9.5.0
       js-tiktoken:
         specifier: ^1.0.8
         version: 1.0.8
@@ -1000,6 +1006,11 @@ packages:
       { integrity: sha512-jDctJ/IVQbZoJykoeHbhXpOlNBqGNcwXJKJog42E5HDPUwQTSdjCHdihjj0DlnheQ7blbT6dHOafNAiS8ooQKA== }
     engines: { node: ">=8" }
 
+  binaryextensions@6.11.0:
+    resolution:
+      { integrity: sha512-sXnYK/Ij80TO3lcqZVV2YgfKN5QjUWIRk/XSm2J/4bd/lPko3lvk0O4ZppH6m+6hB2/GTu+ptNwVFe1xh+QLQw== }
+    engines: { node: ">=4" }
+
   bindings@1.5.0:
     resolution:
       { integrity: sha512-p2q/t/mhvuOj/UeLlV6566GD/guowlr0hHxClI0W9m7MWYkL1F0hLo+0Aexs9HSPCtR1SXQ0TD3MMKrXZajbiQ== }
@@ -1381,6 +1392,11 @@ packages:
     resolution:
       { integrity: sha512-I88TYZWc9XiYHRQ4/3c5rjjfgkjhLyW2luGIheGERbNQ6OY7yTybanSpDXZa8y7VUP9YmDcYa+eyq4ca7iLqWA== }
 
+  editions@6.21.0:
+    resolution:
+      { integrity: sha512-ofkXJtn7z0urokN62DI3SBo/5xAtF0rR7tn+S/bSYV79Ka8pTajIIl+fFQ1q88DQEImymmo97M4azY3WX/nUdg== }
+    engines: { node: ">=4" }
+
   emittery@1.0.1:
     resolution:
       { integrity: sha512-2ID6FdrMD9KDLldGesP6317G78K7km/kMcwItRtVFva7I/cSEOIaLpewaUb+YLXVwdAp3Ctfxh/V5zIl1sj7dQ== }
@@ -1737,6 +1753,11 @@ packages:
       { integrity: sha512-g7dmpshy+gD7mh88OC9NwSGTKoc3kyLAZQRU1mt53Aw/vnvfXnbC+F/7F7QoYVKbV+KNvJx8wArewKy1vXMtlg== }
     engines: { node: ">= 4" }
 
+  ignore@7.0.0:
+    resolution:
+      { integrity: sha512-lcX8PNQygAa22u/0BysEY8VhaFRzlOkvdlKczDPnJvrkJD1EuqzEky5VYYKM2iySIuaVIDv9N190DfSreSLw2A== }
+    engines: { node: ">= 4" }
+
   import-fresh@3.3.0:
     resolution:
       { integrity: sha512-veYYhQa+D1QBKznvhUHxb8faxlrwUnxseDAbAp457E0wLNio2bOSKnjYDhMj+YiAq61xrMGhQk9iXVk5FzgQMw== }
@@ -1953,6 +1974,11 @@ packages:
     resolution:
       { integrity: sha512-zKa/Dxq2lGsBIXQ7CUZWTHfvxPC2ej0KfO7fIPqLlHB9J2hJ7rGhZ5rilhuufylr4RXYPzJUeFjKxz305OsNlA== }
     engines: { node: ">=10.13" }
+
+  istextorbinary@9.5.0:
+    resolution:
+      { integrity: sha512-5mbUj3SiZXCuRf9fT3ibzbSSEWiy63gFfksmGfdOzujPjW3k+z8WvIBxcJHBoQNlaZaiyB25deviif2+osLmLw== }
+    engines: { node: ">=4" }
 
   java-properties@1.0.2:
     resolution:
@@ -3128,6 +3154,11 @@ packages:
       { integrity: sha512-te/NtwBwfiNRLf9Ijqx3T0nlqZiQ2XrrtBvu+cLL8ZRrGkO0NHTug8MYFKyoSrv/sHTaSKfilUkizV6XhxMJ3g== }
     engines: { node: ">=8" }
 
+  textextensions@6.11.0:
+    resolution:
+      { integrity: sha512-tXJwSr9355kFJI3lbCkPpUH5cP8/M0GGy2xLO34aZCjMXBaK3SoPnZwr/oWmo1FdCnELcs4npdCIOFtq9W3ruQ== }
+    engines: { node: ">=4" }
+
   through2@2.0.5:
     resolution:
       { integrity: sha512-/mrRod8xqpA+IHSLyGCQ2s8SPHiCDEeQJSep1jqLYeEUClOFG2Qsh+4FU6G9VeqpZnGW/Su8LQGc4YKni5rYSQ== }
@@ -3284,6 +3315,11 @@ packages:
   validate-npm-package-license@3.0.4:
     resolution:
       { integrity: sha512-DpKm2Ui/xN7/HQKCtpZxoRWBhZ9Z0kqtygG8XCgNQ8ZlDnxuQmWhj566j8fN4Cu3/JmbhsDo7fcAJq4s9h27Ew== }
+
+  version-range@4.14.0:
+    resolution:
+      { integrity: sha512-gjb0ARm9qlcBAonU4zPwkl9ecKkas+tC2CGwFfptTCWWIVTWY1YUbT2zZKsOAF1jR/tNxxyLwwG0cb42XlYcTg== }
+    engines: { node: ">=4" }
 
   webidl-conversions@3.0.1:
     resolution:
@@ -4155,6 +4191,10 @@ snapshots:
 
   binary-extensions@2.2.0: {}
 
+  binaryextensions@6.11.0:
+    dependencies:
+      editions: 6.21.0
+
   bindings@1.5.0:
     dependencies:
       file-uri-to-path: 1.0.0
@@ -4444,6 +4484,10 @@ snapshots:
       readable-stream: 2.3.8
 
   eastasianwidth@0.2.0: {}
+
+  editions@6.21.0:
+    dependencies:
+      version-range: 4.14.0
 
   emittery@1.0.1: {}
 
@@ -4778,6 +4822,8 @@ snapshots:
 
   ignore@5.3.0: {}
 
+  ignore@7.0.0: {}
+
   import-fresh@3.3.0:
     dependencies:
       parent-module: 1.0.1
@@ -4943,6 +4989,12 @@ snapshots:
       lodash.isplainobject: 4.0.6
       lodash.isstring: 4.0.1
       lodash.uniqby: 4.7.0
+
+  istextorbinary@9.5.0:
+    dependencies:
+      binaryextensions: 6.11.0
+      editions: 6.21.0
+      textextensions: 6.11.0
 
   java-properties@1.0.2: {}
 
@@ -5793,6 +5845,10 @@ snapshots:
 
   text-extensions@2.4.0: {}
 
+  textextensions@6.11.0:
+    dependencies:
+      editions: 6.21.0
+
   through2@2.0.5:
     dependencies:
       readable-stream: 2.3.8
@@ -5878,6 +5934,8 @@ snapshots:
     dependencies:
       spdx-correct: 3.2.0
       spdx-expression-parse: 3.0.1
+
+  version-range@4.14.0: {}
 
   webidl-conversions@3.0.1: {}
 

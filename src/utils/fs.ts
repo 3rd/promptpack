@@ -1,8 +1,35 @@
 import chokidar from "chokidar";
-import { readdirSync, readFileSync, statSync } from "node:fs";
+import ignore from "ignore";
+import { isText } from "istextorbinary";
+import { existsSync, readdirSync, readFileSync, statSync } from "node:fs";
 import { relative, resolve } from "node:path";
 import { ignoredDirectories } from "../config.js";
 import { tokenize } from "./tokenizer.js";
+
+const tokenCountCache = new Map<string, { mtime: number; count: number }>();
+const builtinIgnores = [
+  // lock files
+  "package-lock.json",
+  "pnpm-lock.yaml",
+  "*.lock",
+  // dependencies
+  "node_modules",
+  // git
+  ".git",
+  // logs
+  "*.log",
+];
+
+// gitignore filter
+const gitignorePath = resolve(process.cwd(), ".gitignore");
+const gitignoreContent = existsSync(gitignorePath)
+  ? readFileSync(gitignorePath, "utf8")
+      .split("\n")
+      .map((line) => line.trim())
+      .map((line) => line.replace(/^\//, ""))
+      .join("\n")
+  : "";
+const gitignoreFilter = ignore.default().add(ignoredDirectories).add(builtinIgnores).add(gitignoreContent);
 
 type TreeItemBase = {
   name: string;
@@ -62,38 +89,66 @@ export const getTree = (
 
   for (const item of items) {
     const itemPath = resolve(path, item);
+    const relativePath = relative(process.cwd(), itemPath);
+
     try {
       const stats = statSync(itemPath);
       const extension = item.includes(".") ? item.split(".").pop()! : "";
 
       if (stats.isSymbolicLink()) continue;
 
+      const pathToCheck = stats.isDirectory() ? `${relativePath}/` : relativePath;
+      if (relativePath && gitignoreFilter.ignores(pathToCheck)) continue;
+
       if (stats.isDirectory()) {
-        if (ignoredDirectories.includes(item)) continue;
         const subDir = getTree(itemPath, {
           level: result.level + 1,
           getIsSelected: opts?.getIsSelected,
           getIsExpanded: opts?.getIsExpanded,
           rootPath: opts?.rootPath ?? path,
         });
-        result.directories.push(subDir);
-        result.tokenCount += subDir.tokenCount;
+        if (subDir.tokenCount > 0) {
+          result.directories.push(subDir);
+          result.tokenCount += subDir.tokenCount;
+        }
       } else {
-        const content = readFileSync(itemPath, "utf8");
-        const fileTokenCount = tokenize(content).length;
-        result.tokenCount += fileTokenCount;
+        // skip files larger than 512KB
+        if (stats.size > 512 * 1024) continue;
 
-        result.files.push({
-          type: "file",
-          name: item,
-          path: itemPath,
-          relativePath: relative(opts?.rootPath ?? path, itemPath),
-          extension,
-          size: stats.size,
-          level: result.level + 1,
-          selected: opts?.getIsSelected?.(itemPath) ?? false,
-          tokenCount: fileTokenCount,
-        });
+        try {
+          if (!isText(itemPath)) continue;
+
+          let fileTokenCount: number;
+          const cached = tokenCountCache.get(itemPath);
+
+          if (cached && cached.mtime === stats.mtimeMs) {
+            fileTokenCount = cached.count;
+          } else {
+            const content = readFileSync(itemPath, "utf8");
+            fileTokenCount = tokenize(content).length;
+            tokenCountCache.set(itemPath, {
+              mtime: stats.mtimeMs,
+              count: fileTokenCount,
+            });
+          }
+
+          if (fileTokenCount > 0) {
+            result.tokenCount += fileTokenCount;
+            result.files.push({
+              type: "file",
+              name: item,
+              path: itemPath,
+              relativePath: relative(opts?.rootPath ?? path, itemPath),
+              extension,
+              size: stats.size,
+              level: result.level + 1,
+              selected: opts?.getIsSelected?.(itemPath) ?? false,
+              tokenCount: fileTokenCount,
+            });
+          }
+        } catch {
+          continue;
+        }
       }
     } catch {}
   }
@@ -106,7 +161,16 @@ export const watch = (path: string, callback: () => void) => {
     persistent: true,
     followSymlinks: false,
     ignoreInitial: true,
-    ignored: ignoredDirectories.map((dir) => `**/${dir}/**`),
+    ignored: (currentPath: string) => {
+      const relativePath = relative(process.cwd(), currentPath);
+      try {
+        const stats = statSync(currentPath);
+        const pathToCheck = stats.isDirectory() ? `${relativePath}/` : relativePath;
+        return Boolean(relativePath && gitignoreFilter.ignores(pathToCheck));
+      } catch {
+        return false;
+      }
+    },
   });
   watcher.on("ready", () => {
     watcher.on("all", callback);

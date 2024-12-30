@@ -112,10 +112,17 @@ export const toggleItemSelected = (node: TreeDirectory | TreeFile, path: string)
   if (isTreeDirectory(node)) {
     const newNode = { ...node };
     if (node.path === path) {
-      const newSelected = !node.selected;
-      newNode.directories = newNode.directories.map((subDir) => toggleAllSelected(subDir, newSelected));
-      newNode.files = newNode.files.map((file) => ({ ...file, selected: newSelected }));
-      newNode.selected = newSelected;
+      if (node.selected) {
+        newNode.selected = false;
+        newNode.partialSelected = false;
+        newNode.directories = newNode.directories.map((d) => toggleAllSelected(d, false));
+        newNode.files = newNode.files.map((f) => ({ ...f, selected: false }));
+      } else {
+        newNode.selected = true;
+        newNode.partialSelected = false;
+        newNode.directories = newNode.directories.map((d) => toggleAllSelected(d, true));
+        newNode.files = newNode.files.map((f) => ({ ...f, selected: true }));
+      }
     } else {
       newNode.directories = newNode.directories.map((subDir) => toggleItemSelected(subDir, path) as TreeDirectory);
       newNode.files = newNode.files.map((file) => (file.path === path ? { ...file, selected: !file.selected } : file));
