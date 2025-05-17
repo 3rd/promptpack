@@ -27,7 +27,7 @@ export const Stats = memo(({ tokenCount, fileCount = 0, hunkCount = 0 }: StatsPr
       ) : null}
       {hunkCount > 0 ? (
         <>
-          <Text color={theme.selected}>{hunkCount}</Text>
+          <Text color={theme.selected}> {hunkCount}</Text>
           <Text> hunks,</Text>
         </>
       ) : null}

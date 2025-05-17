@@ -8,7 +8,7 @@ import { tokenize } from "./tokenizer.js";
 
 const tokenCountCache = new Map<string, { mtime: number; count: number }>();
 
-const builtinIgnores = [
+export const builtinIgnores = [
   // lock files
   "package-lock.json",
   "pnpm-lock.yaml",
@@ -28,7 +28,12 @@ const gitignoreContent = existsSync(gitignorePath)
       .map((line) => line.replace(/^\//, ""))
       .join("\n")
   : "";
-const gitignoreFilter = ignore.default().add(ignoredDirectories).add(builtinIgnores).add(gitignoreContent);
+export const gitignoreFilter = ignore.default().add(ignoredDirectories).add(builtinIgnores).add(gitignoreContent);
+
+export const shouldIgnorePath = (relativePath: string, isDir = false): boolean => {
+  const pathToCheck = isDir ? `${relativePath}/` : relativePath;
+  return Boolean(relativePath && gitignoreFilter.ignores(pathToCheck));
+};
 
 type FileTreeItemBase = {
   name: string;

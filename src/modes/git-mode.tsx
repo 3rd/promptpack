@@ -5,12 +5,12 @@ import { GitTree } from "../components/GitTree.js";
 import { Header } from "../components/Header.js";
 import { HunkPreview } from "../components/HunkPreview.js";
 import { Stats } from "../components/Stats.js";
-import { theme } from "../config.js";
+import { theme, UNCOMMITTED_SHA } from "../config.js";
 import { buildGitPrompt } from "../prompts.js";
 import { getGitTree, GitCommit, GitCommitFile, GitCommitHunk, isGitCommit } from "../utils/git.js";
 
-// TODO: infinite loading
-const MAX_COMMITS = 50;
+const LOAD_MORE_PAGE_SIZE = 20;
+const LOAD_MORE_OFFSET = LOAD_MORE_PAGE_SIZE / 2;
 
 const findParentShaInFlatList = (
   itemIndex: number, // index of the file or hunk in the flat list
@@ -124,11 +124,13 @@ export const GitMode = ({ notifications, addNotification, onExit, onToggleMode }
   const [selectedHunks, setSelectedHunks] = useState<GitCommitHunk[]>([]);
   const [gitCurrentItem, setGitCurrentItem] = useState<GitCommit | GitCommitFile | GitCommitHunk | null>(null);
   const [currentGitStats, setCurrentGitStats] = useState<GitModeStats>({ hunkCount: 0, tokenCount: 0 });
+  const [loadedCount, setLoadedCount] = useState(0);
+  const [hasMore, setHasMore] = useState(true);
 
-  const loadGitData = useCallback(async () => {
+  const loadMoreCommits = useCallback(async () => {
     try {
       const commits = await getGitTree(
-        MAX_COMMITS,
+        LOAD_MORE_PAGE_SIZE,
         (path: string) => selectedHunks.some((h) => h.filePath + h.header === path),
         (path: string): boolean => {
           const commit = gitCommits.find((c) => c.sha === path);
@@ -138,10 +140,20 @@ export const GitMode = ({ notifications, addNotification, onExit, onToggleMode }
             if (file) return Boolean(file.expanded);
           }
           return false;
-        }
+        },
+        loadedCount,
+        loadedCount === 0
       );
 
-      setGitCommits(commits);
+      const filtered = loadedCount === 0 ? commits : commits.filter((c) => c.sha !== UNCOMMITTED_SHA);
+
+      if (filtered.length === 0) {
+        setHasMore(false);
+        return;
+      }
+
+      setGitCommits((prev) => [...prev, ...filtered]);
+      setLoadedCount((prev) => prev + filtered.length);
 
       const currentItemExists = commits.some((c) => {
         if (c.sha === gitCursorItemPath) return true;
@@ -171,11 +183,12 @@ export const GitMode = ({ notifications, addNotification, onExit, onToggleMode }
       addNotification(`Failed to load git data: ${String(error)}`);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [addNotification]);
+  }, [addNotification, gitCommits, gitCursorItemPath, selectedHunks, loadedCount]);
 
   useEffect(() => {
-    loadGitData();
-  }, [loadGitData]);
+    loadMoreCommits();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   useEffect(() => {
     let totalHunkCount = 0;
@@ -295,6 +308,8 @@ export const GitMode = ({ notifications, addNotification, onExit, onToggleMode }
           setGitCursorItemPath(nextPath);
           setGitCurrentItem(nextItem);
         }
+      } else if (targetIndex >= items.length - LOAD_MORE_OFFSET && hasMore) {
+        loadMoreCommits();
       }
       return;
     }

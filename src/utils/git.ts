@@ -1,5 +1,6 @@
 import { LogResult, simpleGit, SimpleGit } from "simple-git";
 import { UNCOMMITTED_SHA } from "../config.js";
+import { shouldIgnorePath } from "./fs.js";
 import { tokenize } from "./tokenizer.js";
 
 const git: SimpleGit = simpleGit(process.cwd());
@@ -57,6 +58,7 @@ const parseDiffToCommitFiles = (diffContent: string, commitSha: string, commitSu
     if (!filePath || filePath === "/dev/null") continue;
 
     const normalizedFilePath = filePath.replace(/^\/+/, "").replace(/\/+/g, "/");
+    if (shouldIgnorePath(normalizedFilePath)) continue;
     let commitFile = fileMap.get(normalizedFilePath);
     if (!commitFile) {
       commitFile = {
@@ -103,32 +105,40 @@ const parseDiffToCommitFiles = (diffContent: string, commitSha: string, commitSu
 export const getGitTree = async (
   maxCommits = 20,
   getIsSelected: (path: string) => boolean = () => false,
-  getIsExpanded: (path: string) => boolean = () => false
+  getIsExpanded: (path: string) => boolean = () => false,
+  skipCommits = 0,
+  includeUncommitted = true
 ): Promise<GitCommit[]> => {
-  const uncommittedSha = UNCOMMITTED_SHA;
-  const uncommittedSubject = "Uncommitted Changes";
-  const uncommittedNode: GitCommit = {
-    sha: uncommittedSha,
-    subject: uncommittedSubject,
-    expanded: getIsExpanded(uncommittedSha),
-    selected: getIsSelected(uncommittedSha),
-    tokenCount: 0,
-    files: [],
-  };
-  const allCommits: GitCommit[] = [uncommittedNode];
+  const allCommits: GitCommit[] = [];
+  let uncommittedNode: GitCommit | null = null;
+  if (includeUncommitted) {
+    const uncommittedSha = UNCOMMITTED_SHA;
+    const uncommittedSubject = "Uncommitted Changes";
+    uncommittedNode = {
+      sha: uncommittedSha,
+      subject: uncommittedSubject,
+      expanded: getIsExpanded(uncommittedSha),
+      selected: getIsSelected(uncommittedSha),
+      tokenCount: 0,
+      files: [],
+    };
+    allCommits.push(uncommittedNode);
+  }
 
-  const stagedDiff = await git.diff(["--no-ext-diff", "--cached", "--patch", "--unified=3", "--color=never"]);
-  const unstagedDiff = await git.diff(["--no-ext-diff", "--patch", "--unified=3", "--color=never"]);
-  const combinedDiff = `${stagedDiff}\n${unstagedDiff}`.trim();
-  if (combinedDiff) {
-    const commitFiles = parseDiffToCommitFiles(combinedDiff, uncommittedSha, uncommittedSubject);
-    uncommittedNode.files = commitFiles;
-    uncommittedNode.tokenCount = commitFiles.reduce((n, d) => n + d.tokenCount, 0);
+  if (includeUncommitted && uncommittedNode) {
+    const stagedDiff = await git.diff(["--no-ext-diff", "--cached", "--patch", "--unified=3", "--color=never"]);
+    const unstagedDiff = await git.diff(["--no-ext-diff", "--patch", "--unified=3", "--color=never"]);
+    const combinedDiff = `${stagedDiff}\n${unstagedDiff}`.trim();
+    if (combinedDiff) {
+      const commitFiles = parseDiffToCommitFiles(combinedDiff, uncommittedNode.sha, uncommittedNode.subject);
+      uncommittedNode.files = commitFiles;
+      uncommittedNode.tokenCount = commitFiles.reduce((n, d) => n + d.tokenCount, 0);
+    }
   }
 
   let logResult: LogResult | null = null;
   try {
-    logResult = await git.log({ maxCount: maxCommits });
+    logResult = await git.log({ maxCount: maxCommits, "--skip": skipCommits });
   } catch {
     return allCommits;
   }
