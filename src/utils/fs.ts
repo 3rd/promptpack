@@ -117,7 +117,15 @@ export const getFileTree = (
         if (stats.size > 512 * 1024) continue;
 
         try {
-          if (!isText(itemPath)) continue;
+          // If isText(itemPath) fails, try checking the file buffer directly as fallback for files without a recognized extension
+          let isTextFile = isText(itemPath);
+          if (!isTextFile) {
+            try {
+              const buffer = readFileSync(itemPath);
+              isTextFile = isText(undefined, buffer);
+            } catch {}
+          }
+          if (!isTextFile) continue;
 
           let fileTokenCount: number;
           const cached = tokenCountCache.get(itemPath);
