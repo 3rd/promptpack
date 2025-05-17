@@ -147,7 +147,7 @@ export const getGitTree = async (
     const sha = logEntry.hash;
     const subject = logEntry.message.trim();
     try {
-      const commitDiff = await git.show([sha, "--patch", "--unified=3", "--color=never"]);
+      const commitDiff = await git.show([sha, "--patch", "--unified=3", "--color=never", "--first-parent", "-m"]);
       if (!commitDiff) return null;
       const commitFiles = parseDiffToCommitFiles(commitDiff, sha, subject);
       let totalCommitTokenCount = 0;
