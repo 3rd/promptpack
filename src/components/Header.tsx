@@ -1,20 +1,23 @@
-import React from "react";
 import { Box, Newline, Text } from "ink";
 import packageJson from "../../package.json";
 import { theme } from "../config.js";
 import { Kbd } from "./Kbd.js";
 
-export type HeaderProps = {
-  children?: React.ReactNode;
+const MAX_LOG_LENGTH = 6;
+
+type HeaderProps = {
+  mode?: "file" | "git";
+  notifications: { id: string; message: string }[];
 };
 
-export const Header = ({ children }: HeaderProps) => {
+export const Header = ({ notifications, mode = "file" }: HeaderProps) => {
   return (
     <Box
       borderColor={theme.border}
       borderStyle="round"
       flexDirection="row"
       gap={2}
+      flexShrink={0}
       // borderTop={false}
       // borderLeft={false}
       // borderRight={false}
@@ -34,13 +37,17 @@ export const Header = ({ children }: HeaderProps) => {
           </Text>
           <Newline />
           <Text>
-            - <Kbd>Tab</Kbd> or <Kbd>Enter</Kbd> to expand/collapse directories
+            - <Kbd>Tab</Kbd> or <Kbd>Enter</Kbd> to expand/collapse items
           </Text>
           <Newline />
-          <Text>
-            - <Kbd>f</Kbd> to open fuzzy finder
-          </Text>
-          <Newline />
+          {mode === "file" && (
+            <>
+              <Text>
+                - <Kbd>f</Kbd> to open fuzzy finder
+              </Text>
+              <Newline />
+            </>
+          )}
           <Text>
             - <Kbd>Space</Kbd> to mark a file / directory for packing
           </Text>
@@ -48,9 +55,20 @@ export const Header = ({ children }: HeaderProps) => {
           <Text>
             - <Kbd>y</Kbd> to build and copy the prompt to the system clipboard
           </Text>
+          <Newline />
+          <Text>
+            - <Kbd>g</Kbd> to switch between file and git mode
+          </Text>
         </Text>
       </Box>
-      {children}
+
+      <Box flexDirection="column" flexGrow={1}>
+        {notifications.slice(-MAX_LOG_LENGTH).map((n) => (
+          <Text key={n.id} color="gray">
+            {n.message}
+          </Text>
+        ))}
+      </Box>
     </Box>
   );
 };

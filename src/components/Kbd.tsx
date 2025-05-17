@@ -9,11 +9,11 @@ export type KbdProps = {
 export const Kbd = ({ children }: KbdProps) => {
   return (
     <Text color={theme.kbd.bg}>
-      {""}
+      
       <Text backgroundColor={theme.kbd.bg} color={theme.kbd.fg}>
         {children}
       </Text>
-      {""}
+      
     </Text>
   );
 };

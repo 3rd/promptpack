@@ -7,6 +7,7 @@ import { ignoredDirectories } from "../config.js";
 import { tokenize } from "./tokenizer.js";
 
 const tokenCountCache = new Map<string, { mtime: number; count: number }>();
+
 const builtinIgnores = [
   // lock files
   "package-lock.json",
@@ -16,8 +17,6 @@ const builtinIgnores = [
   "node_modules",
   // git
   ".git",
-  // logs
-  "*.log",
 ];
 
 // gitignore filter
@@ -31,7 +30,7 @@ const gitignoreContent = existsSync(gitignorePath)
   : "";
 const gitignoreFilter = ignore.default().add(ignoredDirectories).add(builtinIgnores).add(gitignoreContent);
 
-type TreeItemBase = {
+type FileTreeItemBase = {
   name: string;
   path: string;
   relativePath: string;
@@ -39,31 +38,33 @@ type TreeItemBase = {
   tokenCount: number;
 };
 
-export type TreeFile = TreeItemBase & {
+export type FileTreeFileItem = FileTreeItemBase & {
   type: "file";
   extension: string;
   size: number;
   selected: boolean;
 };
 
-export type TreeDirectory = TreeItemBase & {
+export type FileTreeDirectoryItem = FileTreeItemBase & {
   type: "directory";
-  files: TreeFile[];
-  directories: TreeDirectory[];
+  files: FileTreeFileItem[];
+  directories: FileTreeDirectoryItem[];
   expanded: boolean;
   selected: boolean;
   partialSelected?: boolean;
 };
 
-export const isTreeFile = (item: TreeDirectory | TreeFile): item is TreeFile => {
+export const isFileTreeFileItem = (item: FileTreeDirectoryItem | FileTreeFileItem): item is FileTreeFileItem => {
   return item.type === "file";
 };
 
-export const isTreeDirectory = (item: TreeDirectory | TreeFile): item is TreeDirectory => {
+export const isFileTreeDirectoryItem = (
+  item: FileTreeDirectoryItem | FileTreeFileItem
+): item is FileTreeDirectoryItem => {
   return item.type === "directory";
 };
 
-export const getTree = (
+export const getFileTree = (
   path: string,
   opts?: {
     level?: number;
@@ -72,7 +73,7 @@ export const getTree = (
     rootPath?: string;
   }
 ) => {
-  const result: TreeDirectory = {
+  const result: FileTreeDirectoryItem = {
     type: "directory",
     name: path.split("/").pop()!,
     path,
@@ -101,7 +102,7 @@ export const getTree = (
       if (relativePath && gitignoreFilter.ignores(pathToCheck)) continue;
 
       if (stats.isDirectory()) {
-        const subDir = getTree(itemPath, {
+        const subDir = getFileTree(itemPath, {
           level: result.level + 1,
           getIsSelected: opts?.getIsSelected,
           getIsExpanded: opts?.getIsExpanded,

@@ -7,5 +7,5 @@ const enc = getEncoding("cl100k_base", {
 });
 
 export const tokenize = (input: string) => {
-  return enc.encode(input);
+  return enc.encode(input, "all");
 };

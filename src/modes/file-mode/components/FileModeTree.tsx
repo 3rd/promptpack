@@ -1,13 +1,19 @@
 import { memo, useEffect, useMemo, useRef, useState } from "react";
 import { Box, DOMElement, measureElement, Newline, Text } from "ink";
-import { theme } from "../config.js";
-import { isTreeDirectory, TreeDirectory, TreeFile } from "../utils/fs.js";
+import { theme } from "../../../config.js";
+import { FileTreeDirectoryItem, FileTreeFileItem, isFileTreeDirectoryItem } from "../../../utils/fs.js";
+
+const getScrollTop = (availableHeight: number, lineCount: number, cursorIndex: number) => {
+  const maxScrollTop = Math.max(0, lineCount - availableHeight);
+  const scrollTop = Math.max(0, Math.min(maxScrollTop, cursorIndex - availableHeight / 2));
+  return scrollTop;
+};
 
 export type TreeFileLineProps = {
-  file: TreeFile;
+  file: FileTreeFileItem;
   isCursor: boolean;
 };
-export const TreeFileLine = memo(({ file, isCursor }: TreeFileLineProps) => {
+const TreeFileLine = memo(({ file, isCursor }: TreeFileLineProps) => {
   const indent = " ".repeat(Math.max(0, (file.level - 1) * 2));
 
   return (
@@ -25,10 +31,10 @@ export const TreeFileLine = memo(({ file, isCursor }: TreeFileLineProps) => {
 });
 
 export type TreeDirectoryLineProps = {
-  directory: TreeDirectory;
+  directory: FileTreeDirectoryItem;
   isCursor: boolean;
 };
-export const TreeDirectoryLine = memo(({ directory, isCursor }: TreeDirectoryLineProps) => {
+const TreeDirectoryLine = memo(({ directory, isCursor }: TreeDirectoryLineProps) => {
   const indent = " ".repeat(Math.max(0, (directory.level - 1) * 2));
 
   let color;
@@ -53,17 +59,11 @@ export const TreeDirectoryLine = memo(({ directory, isCursor }: TreeDirectoryLin
   );
 });
 
-const getScrollTop = (availableHeight: number, lineCount: number, cursorIndex: number) => {
-  const maxScrollTop = Math.max(0, lineCount - availableHeight);
-  const scrollTop = Math.max(0, Math.min(maxScrollTop, cursorIndex - availableHeight / 2));
-  return scrollTop;
-};
-
-type TreeProps = {
-  items: (TreeDirectory | TreeFile)[];
+type FileModeTreeProps = {
+  items: (FileTreeDirectoryItem | FileTreeFileItem)[];
   cursorItemPath: string;
 };
-export const Tree = ({ items, cursorItemPath }: TreeProps) => {
+export const FileModeTree = ({ items, cursorItemPath }: FileModeTreeProps) => {
   const wrapperRef = useRef<DOMElement>(null);
   const [height, setHeight] = useState(0);
 
@@ -92,7 +92,7 @@ export const Tree = ({ items, cursorItemPath }: TreeProps) => {
         {viewportItems.map((item) => {
           const isCursor = item.path === cursorItemPath;
 
-          if (isTreeDirectory(item)) {
+          if (isFileTreeDirectoryItem(item)) {
             return <TreeDirectoryLine key={item.path} directory={item} isCursor={isCursor} />;
           }
           return <TreeFileLine key={item.path} file={item} isCursor={isCursor} />;

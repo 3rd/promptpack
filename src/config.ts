@@ -1,3 +1,5 @@
+export const UNCOMMITTED_SHA = "UNCOMMITTED";
+
 export const ignoredDirectories = ["node_modules", ".git", "dist"];
 
 export const theme = {
@@ -15,4 +17,7 @@ export const theme = {
   cursor: "#793886",
   selected: "#00CF81",
   partiallySelected: "#FFD700",
+  commitColor: "#4a86e8",
+  fileColor: "#6aa84f",
+  hunkColor: "#e69138",
 };
