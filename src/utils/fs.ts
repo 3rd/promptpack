@@ -1,7 +1,8 @@
 import chokidar from "chokidar";
 import ignore from "ignore";
+import walk from "ignore-walk";
 import { isText } from "istextorbinary";
-import { existsSync, readdirSync, readFileSync, statSync } from "node:fs";
+import { readdirSync, readFileSync, statSync } from "node:fs";
 import { relative, resolve } from "node:path";
 import { ignoredDirectories } from "../config.js";
 import { tokenize } from "./tokenizer.js";
@@ -19,20 +20,53 @@ export const builtinIgnores = [
   ".git",
 ];
 
-// gitignore filter
-const gitignorePath = resolve(process.cwd(), ".gitignore");
-const gitignoreContent = existsSync(gitignorePath)
-  ? readFileSync(gitignorePath, "utf8")
-      .split("\n")
-      .map((line) => line.trim())
-      .map((line) => line.replace(/^\//, ""))
-      .join("\n")
-  : "";
-export const gitignoreFilter = ignore.default().add(ignoredDirectories).add(builtinIgnores).add(gitignoreContent);
+// builtin ignore filter (separate from .gitignore-based ignores)
+const builtinIgnoreFilter = ignore.default().add(ignoredDirectories).add(builtinIgnores);
+
+// git ignore handling
+let notGitIgnoredFilesCache: Set<string> | null = null;
+const getNotGitIgnoredFiles = (): Set<string> => {
+  try {
+    const files = walk.sync({
+      path: process.cwd(),
+      ignoreFiles: [".gitignore"],
+      includeEmpty: false,
+      follow: false,
+    });
+    const normalizedFiles = files.map((file: string) => file.replace(/\\/g, "/"));
+    return new Set(normalizedFiles);
+  } catch (error) {
+    console.warn("Failed to process .gitignore files, falling back to builtin ignores only:", error);
+    return new Set();
+  }
+};
+
+const getCachedNotGitIgnoredFiles = (): Set<string> => {
+  notGitIgnoredFilesCache ??= getNotGitIgnoredFiles();
+  return notGitIgnoredFilesCache;
+};
 
 export const shouldIgnorePath = (relativePath: string, isDir = false): boolean => {
-  const pathToCheck = isDir ? `${relativePath}/` : relativePath;
-  return Boolean(relativePath && gitignoreFilter.ignores(pathToCheck));
+  if (!relativePath) return false;
+
+  const normalizedPath = relativePath.replace(/\\/g, "/");
+
+  const pathToCheck = isDir ? `${normalizedPath}/` : normalizedPath;
+  if (builtinIgnoreFilter.ignores(pathToCheck)) return true;
+
+  const gitIgnoreAllowedFiles = getCachedNotGitIgnoredFiles();
+  if (gitIgnoreAllowedFiles.size === 0) return false;
+
+  if (isDir) {
+    const dirPrefix = normalizedPath.endsWith("/") ? normalizedPath : `${normalizedPath}/`;
+    for (const allowedFile of gitIgnoreAllowedFiles) {
+      if (allowedFile.startsWith(dirPrefix)) {
+        return false;
+      }
+    }
+    return true;
+  }
+  return !gitIgnoreAllowedFiles.has(normalizedPath);
 };
 
 type FileTreeItemBase = {
@@ -103,8 +137,7 @@ export const getFileTree = (
 
       if (stats.isSymbolicLink()) continue;
 
-      const pathToCheck = stats.isDirectory() ? `${relativePath}/` : relativePath;
-      if (relativePath && gitignoreFilter.ignores(pathToCheck)) continue;
+      if (shouldIgnorePath(relativePath, stats.isDirectory())) continue;
 
       if (stats.isDirectory()) {
         const subDir = getFileTree(itemPath, {
@@ -179,15 +212,20 @@ export const watch = (path: string, callback: () => void) => {
       const relativePath = relative(process.cwd(), currentPath);
       try {
         const stats = statSync(currentPath);
-        const pathToCheck = stats.isDirectory() ? `${relativePath}/` : relativePath;
-        return Boolean(relativePath && gitignoreFilter.ignores(pathToCheck));
+        return shouldIgnorePath(relativePath, stats.isDirectory());
       } catch {
         return false;
       }
     },
   });
   watcher.on("ready", () => {
-    watcher.on("all", callback);
+    watcher.on("all", (_event: string, changedPath: string) => {
+      const relativePath = relative(process.cwd(), changedPath);
+      if (relativePath.endsWith(".gitignore")) {
+        notGitIgnoredFilesCache = null;
+      }
+      callback();
+    });
   });
   return watcher;
 };
