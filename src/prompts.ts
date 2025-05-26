@@ -9,7 +9,7 @@ type FileTreeNode = {
 const buildFileTreeList = (files: FileTreeFileItem[]): string => {
   const tree: FileTreeNode = {};
   for (const file of files) {
-    const parts = file.relativePath.split("/");
+    const parts = file.relativePath.split(/[/\\]/);
     let current: FileTreeNode = tree;
     for (const part of parts) {
       if (!Object.hasOwn(current, part)) current[part] = {};

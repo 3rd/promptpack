@@ -61,7 +61,7 @@ const GitTreeFileLine = memo(({ file, isCursor }: GitTreeFileLineProps) => {
   const terminalWidth = process.stdout.columns || 80;
   const maxFileNameLength = Math.max(0, terminalWidth - approximateFixedWidth);
 
-  const fileName = file.path.split("/").pop() || "";
+  const fileName = file.path.split(/[/\\]/).findLast(Boolean) || "";
   const trimmedFileName =
     fileName.length > maxFileNameLength ? `${fileName.slice(0, Math.max(0, maxFileNameLength - 3))}...` : fileName;
 

@@ -86,7 +86,7 @@ const parseDiffToCommitFiles = (diffContent: string, commitSha: string, commitSu
       const currentHunkIndex = commitFile.hunks.length;
 
       const hunkItem: GitCommitHunk = {
-        name: `${normalizedFilePath.split("/").pop()}#${currentHunkIndex + 1}`,
+        name: `${normalizedFilePath.split(/[/\\]/).findLast(Boolean) || normalizedFilePath}#${currentHunkIndex + 1}`,
         filePath: normalizedFilePath,
         selected: false,
         tokenCount: tokens,

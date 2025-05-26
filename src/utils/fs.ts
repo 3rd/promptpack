@@ -114,7 +114,7 @@ export const getFileTree = (
 ) => {
   const result: FileTreeDirectoryItem = {
     type: "directory",
-    name: path.split("/").pop()!,
+    name: path.split(/[/\\]/).findLast(Boolean)!,
     path,
     relativePath: relative(opts?.rootPath ?? path, path),
     files: [],
