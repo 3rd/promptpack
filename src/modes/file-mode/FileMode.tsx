@@ -189,7 +189,8 @@ export const FileMode = ({ notifications, onAddNotification, onExit, onToggleMod
       onExit();
       return;
     }
-    if (input === "g") {
+
+    if (input === "g" && !isSearchMode) {
       onToggleMode();
       return;
     }
